@@ -7,7 +7,7 @@ of faces detected at a given time in a realtime webcam stream.
 
 import cv2
 from FaceDetection.frontal_face_detector import FrontalFaceDetector
-
+from FaceDetection.mesh_face_detector import FaceMeshDetector
 
 def detect_over_webcam(cap, detector):
     """For use in main with openCV capture object"""
@@ -22,9 +22,12 @@ def detect_over_webcam(cap, detector):
 
 def main():
     haar_detector = FrontalFaceDetector()
+    mesh_detector = FaceMeshDetector()
+
     # Create capture object for computers camera
     cap = cv2.VideoCapture(0)
-    detect_over_webcam(cap, detector=haar_detector)
+
+    detect_over_webcam(cap, detector=mesh_detector)
 
 
 if __name__ == "__main__":
