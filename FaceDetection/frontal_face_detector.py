@@ -5,11 +5,17 @@ Date: 9-27-23
 
 Description:
     This module provides a FrontalFaceDetector class that handles face detection using the OpenCV library.
+
+REVISIONS
+1. 11/2/23 - added constant for text scale, added effects argument, and created a separate method for drawing
+             rectangles with the set effects and adjusted detection method to use this for drawing on the frame.
+             The effect added in this iteration allows for a blur effect to be drawn over detected faces.
 """
 
 import cv2
 import os
 import numpy as np
+
 
 class FrontalFaceDetector:
     """
@@ -18,9 +24,10 @@ class FrontalFaceDetector:
     FONT = cv2.FONT_HERSHEY_COMPLEX
     TEXT_COLOR = (0, 255, 255)
     BOX_COLOR = (0, 0, 255)
-    THICKNESS = 2
+    THICKNESS = 1
+    SCALE = 1
 
-    def __init__(self):
+    def __init__(self, effects):
         """
         Initialize the FrontalFaceDetector with a pre-trained cascade classifier for face detection.
         """
@@ -32,6 +39,8 @@ class FrontalFaceDetector:
 
         # Create a cascade
         self.face_cascade = cv2.CascadeClassifier(cascade_path)
+
+        self.effects = effects
 
     def detect_faces(self, frame: np.ndarray) -> None:
         """
@@ -52,13 +61,32 @@ class FrontalFaceDetector:
 
             # For the x, y coordinates and width, height detected
             for (x, y, w, h) in faces:
-                # Draw a rectangle around the face using these values
-                cv2.rectangle(frame, (x, y), (x + w, y + h), self.BOX_COLOR, self.THICKNESS)
+                dims = [x, y, w, h]
+                self.draw_rectangle(frame, dims)
 
             # Update the face count with the number of faces detected
-            face_count = "Faces: " + str(len(faces))
-            cv2.putText(frame, face_count, (10, 25), self.FONT, 1, self.TEXT_COLOR, self.THICKNESS)
+            face_count = f'Faces: {len(faces)}'
+            effect_text = f'Effects: {self.effects}'
+            cv2.putText(frame, face_count, (10, 25), self.FONT, self.SCALE, self.TEXT_COLOR, self.THICKNESS)
+            cv2.putText(frame, effect_text, (10, 50), self.FONT, self.SCALE, self.TEXT_COLOR, self.THICKNESS)
             print(face_count)
-
         except Exception as e:
-            print(f"Error during face detection: {e}")
+            print(f"Error in detect faces: {e}")
+
+    def draw_rectangle(self, frame, dims):
+        try:
+            x, y, w, h = dims
+            if self.effects is None:
+                # Draw a rectangle around the face using these values
+                cv2.rectangle(frame, (x, y), (x + w, y + h), self.BOX_COLOR, self.THICKNESS)
+            elif self.effects == 'blur':
+                # Instead of drawing a rectangle we will first calculate the end coordinates using its boxes start coordinates
+                x2 = x + w
+                y2 = y + h
+                # Then we create a blured image for this area of the original frame
+                blur_img = cv2.blur(frame[y:y2, x:x2], (50, 50))
+                # And lastly we set detected area of the frame equal to the blurred image that we got from the area
+                frame[y:y2, x:x2] = blur_img
+        except Exception as e:
+            print(f"Error in draw rectangle: {e}")
+
